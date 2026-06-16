@@ -945,6 +945,15 @@ textarea,
 .vicar-child-add{width:auto;display:inline-flex;margin-top:.05rem;}
 @media(max-width:760px){.vicar-child-row{grid-template-columns:1fr 1fr;gap:.32rem}.vicar-child-phone{grid-column:1/-1}.vicar-child-remove{width:2rem;height:2rem;grid-column:2;justify-self:end}}@media(max-width:420px){.vicar-child-row{grid-template-columns:1fr}.vicar-child-phone,.vicar-child-remove{grid-column:auto}.vicar-child-remove{justify-self:end}}
 
+
+/* MEMBER PHOTO CROP / RESIZE */
+.photo-crop-box{max-width:min(94vw,440px);}
+.photo-crop-stage{display:flex;justify-content:center;margin:.55rem 0 .75rem;}
+#memberCropCanvas{width:min(68vw,210px);aspect-ratio:3/4;border-radius:8px;border:2px solid rgba(184,138,47,.55);background:#f8f1df;box-shadow:0 12px 26px rgba(29,36,48,.18);}
+.photo-crop-controls{display:grid;gap:.55rem;margin:.5rem 0 .9rem;}
+.photo-crop-control{display:grid;grid-template-columns:4.7rem minmax(0,1fr);gap:.55rem;align-items:center;font-size:.74rem;color:var(--muted);font-weight:700;}
+.photo-crop-control input{width:100%;accent-color:var(--gold);}
+@media(max-width:420px){.photo-crop-control{grid-template-columns:1fr;gap:.2rem}.photo-crop-box{padding:1rem}}
 </style>
 </head>
 <body>
@@ -1326,7 +1335,19 @@ textarea,
     <div class="modal-actions"><div></div><div class="modal-right"><button class="btn-cancel" onclick="closeVicarModal()">Cancel</button><button class="btn-save" id="btn-vicar-save" onclick="saveVicar()">Save</button></div></div>
   </div>
 </div>
-<div class="modal-overlay" id="phoneActionOverlay" style="display:none" onclick="if(event.target===this)closePhoneActions()">
+<div class="modal-overlay" id="memberPhotoCropOverlay" style="display:none" onclick="if(event.target===this)closeMemberPhotoCrop()">
+  <div class="confirm-box photo-crop-box">
+    <div class="confirm-title">Resize Member Photo</div>
+    <div class="confirm-msg">Adjust the photo before saving.</div>
+    <div class="photo-crop-stage"><canvas id="memberCropCanvas" width="360" height="480"></canvas></div>
+    <div class="photo-crop-controls">
+      <label class="photo-crop-control"><span>Zoom</span><input id="memberCropZoom" type="range" min="1" max="3" step="0.01" value="1" oninput="drawMemberCropPreview()"></label>
+      <label class="photo-crop-control"><span>Left / Right</span><input id="memberCropX" type="range" min="-100" max="100" step="1" value="0" oninput="drawMemberCropPreview()"></label>
+      <label class="photo-crop-control"><span>Up / Down</span><input id="memberCropY" type="range" min="-100" max="100" step="1" value="0" oninput="drawMemberCropPreview()"></label>
+    </div>
+    <div class="confirm-btns"><button class="btn-cancel" onclick="closeMemberPhotoCrop()">Cancel</button><button class="btn-save" onclick="saveCroppedMemberPhoto()">Save Photo</button></div>
+  </div>
+</div><div class="modal-overlay" id="phoneActionOverlay" style="display:none" onclick="if(event.target===this)closePhoneActions()">
   <div class="confirm-box phone-action-box">
     <div class="confirm-title" id="phone-action-title">Phone Number</div>
     <div class="confirm-msg" id="phone-action-number"></div>
@@ -1999,6 +2020,7 @@ async function removeFamilyPhoto(){
 //  MEMBER PASSPORT PHOTOS
 // ══════════════════════════════════════════════════════
 let _memberPhotoKey = null;
+let _memberPhotoCrop = null;
 
 function triggerMemberPhoto(pKey){
   if(!isEditor()){showToast('Please login to add photos.','error');return;}
@@ -2016,34 +2038,14 @@ function onMemberPhotoSelected(e){
   const reader=new FileReader();
   reader.onload=function(ev){
     const img=new Image();
-    img.onload=async function(){
-      // Crop & resize to passport ratio (3:4), max 360Ã—480
-      const TARGET_W=360, TARGET_H=480;
-      const srcR=img.width/img.height, tgtR=TARGET_W/TARGET_H;
-      let sx=0,sy=0,sw=img.width,sh=img.height;
-      if(srcR>tgtR){sw=Math.round(sh*tgtR);sx=Math.round((img.width-sw)/2);}
-      else{sh=Math.round(sw/tgtR);sy=Math.round((img.height-sh)/2);}
-      const canvas=document.createElement('canvas');
-      canvas.width=TARGET_W;canvas.height=TARGET_H;
-      canvas.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,TARGET_W,TARGET_H);
-      const dataUrl=canvas.toDataURL('image/jpeg',0.85);
-      const base64=dataUrl.split(',')[1];
-      // Dim all matching photo cells
-      document.querySelectorAll('.mp-avatar,.mp-placeholder').forEach(el=>{
-        if(el.getAttribute('onclick')&&el.getAttribute('onclick').includes(uploadKey))el.classList.add('mp-uploading');
-      });
-      try{
-        const res=await postPhoto({action:'upload',sl:uploadKey,mime:'image/jpeg',data:base64});
-        if(!res.ok)throw new Error(res.error||'Upload failed');
-        DB.photos[uploadKey]={id:res.id,url:res.url};
-        // Re-render the current family detail to show new photo
-        const fam=findFamily(CUR);
-        if(fam){renderPdf(fam);renderAdded(fam.sl);}
-        showToast('Passport photo saved — visible to everyone.','success');
-      }catch(err){
-        showToast('Upload failed: '+err.message,'error');
-        document.querySelectorAll('.mp-uploading').forEach(el=>el.classList.remove('mp-uploading'));
-      }
+    img.onload=function(){
+      _memberPhotoCrop={key:uploadKey,img};
+      const z=document.getElementById('memberCropZoom');
+      const x=document.getElementById('memberCropX');
+      const y=document.getElementById('memberCropY');
+      if(z)z.value='1'; if(x)x.value='0'; if(y)y.value='0';
+      document.getElementById('memberPhotoCropOverlay').style.display='flex';
+      drawMemberCropPreview();
     };
     img.src=ev.target.result;
   };
@@ -2052,6 +2054,58 @@ function onMemberPhotoSelected(e){
   _memberPhotoKey=null;
 }
 
+function memberCropDrawToCanvas(canvas){
+  if(!_memberPhotoCrop||!_memberPhotoCrop.img||!canvas)return null;
+  const img=_memberPhotoCrop.img;
+  const TARGET_W=360, TARGET_H=480;
+  canvas.width=TARGET_W;canvas.height=TARGET_H;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#f8f1df';ctx.fillRect(0,0,TARGET_W,TARGET_H);
+  const zoom=parseFloat(document.getElementById('memberCropZoom')?.value||'1');
+  const ox=parseFloat(document.getElementById('memberCropX')?.value||'0')/100;
+  const oy=parseFloat(document.getElementById('memberCropY')?.value||'0')/100;
+  const cover=Math.max(TARGET_W/img.width,TARGET_H/img.height)*zoom;
+  const dw=img.width*cover, dh=img.height*cover;
+  const maxX=Math.max(0,(dw-TARGET_W)/2), maxY=Math.max(0,(dh-TARGET_H)/2);
+  const dx=(TARGET_W-dw)/2 + ox*maxX;
+  const dy=(TARGET_H-dh)/2 + oy*maxY;
+  ctx.drawImage(img,dx,dy,dw,dh);
+  return canvas;
+}
+
+function drawMemberCropPreview(){
+  memberCropDrawToCanvas(document.getElementById('memberCropCanvas'));
+}
+
+function closeMemberPhotoCrop(){
+  const overlay=document.getElementById('memberPhotoCropOverlay');
+  if(overlay)overlay.style.display='none';
+  _memberPhotoCrop=null;
+}
+
+async function saveCroppedMemberPhoto(){
+  if(!_memberPhotoCrop||!_memberPhotoCrop.key)return;
+  const uploadKey=_memberPhotoCrop.key;
+  const canvas=document.createElement('canvas');
+  memberCropDrawToCanvas(canvas);
+  const dataUrl=canvas.toDataURL('image/jpeg',0.85);
+  const base64=dataUrl.split(',')[1];
+  closeMemberPhotoCrop();
+  document.querySelectorAll('.mp-avatar,.mp-placeholder').forEach(el=>{
+    if(el.getAttribute('onclick')&&el.getAttribute('onclick').includes(uploadKey))el.classList.add('mp-uploading');
+  });
+  try{
+    const res=await postPhoto({action:'upload',sl:uploadKey,mime:'image/jpeg',data:base64});
+    if(!res.ok)throw new Error(res.error||'Upload failed');
+    DB.photos[uploadKey]={id:res.id,url:res.url};
+    const fam=findFamily(CUR);
+    if(fam){renderPdf(fam);renderAdded(fam.sl);}
+    showToast('Passport photo saved - visible to everyone.','success');
+  }catch(err){
+    showToast('Upload failed: '+err.message,'error');
+    document.querySelectorAll('.mp-uploading').forEach(el=>el.classList.remove('mp-uploading'));
+  }
+}
 
 async function removeMemberPhoto(pKey){
   if(!isAdmin()){showToast('Admin access required.','error');return;}
