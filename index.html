@@ -954,6 +954,328 @@ textarea,
 .photo-crop-control{display:grid;grid-template-columns:4.7rem minmax(0,1fr);gap:.55rem;align-items:center;font-size:.74rem;color:var(--muted);font-weight:700;}
 .photo-crop-control input{width:100%;accent-color:var(--gold);}
 @media(max-width:420px){.photo-crop-control{grid-template-columns:1fr;gap:.2rem}.photo-crop-box{padding:1rem}}
+
+/* ═══════════════════════════════════════════════════════════
+   UNIVERSAL AUTOFIT — ALL SCREENS (mobile / tablet / laptop / desktop)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Root viewport lock ── */
+:root {
+  --app-height: 100dvh;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* ── View layer fills full viewport ── */
+.view {
+  width: 100vw;
+  height: var(--app-height);
+  max-height: var(--app-height);
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Scrollable regions: contain overscroll, respect safe areas ── */
+.dir-scroll, .det-scroll, .admin-scroll,
+.login-card-wrap, .setup-wrap {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--safe-bottom) + .5rem);
+  min-height: 0;
+  flex: 1;
+}
+
+/* ── Modals: full-height safe-area-aware ── */
+.modal-overlay, #otpModal {
+  height: var(--app-height);
+  max-height: var(--app-height);
+  padding:
+    max(.75rem, var(--safe-top))
+    max(.75rem, var(--safe-right))
+    max(.75rem, var(--safe-bottom))
+    max(.75rem, var(--safe-left));
+  overflow: auto;
+  align-items: center;
+}
+
+.modal-box, .otp-card, .confirm-box {
+  max-height: calc(var(--app-height) - 2rem);
+  overflow: auto;
+  width: 100%;
+}
+
+/* ── Topbars: safe-area padding ── */
+.topbar, .dir-topbar, .det-hdr {
+  padding-left:  max(1rem, var(--safe-left));
+  padding-right: max(1rem, var(--safe-right));
+  min-width: 0;
+}
+
+/* ── Hero section fills remaining space ── */
+.hero {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Cards never overflow ── */
+.setup-card, .login-card, .otp-card, .modal-box, .confirm-box {
+  box-sizing: border-box;
+  max-width: min(100% - 1.5rem, 500px);
+}
+
+/* ── Tables horizontal-scroll on small screens ── */
+.admin-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.mtable { table-layout: auto; }
+.mtable th, .mtable td,
+.admin-table th, .admin-table td {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+/* ── Long text wraps, never overflows ── */
+.m-name, .added-row-name, .added-row-meta,
+.info-val, .topbar-logo, .dir-title, .det-title {
+  overflow-wrap: break-word;
+  word-break: normal;
+  min-width: 0;
+}
+
+/* ── Toast stays inside viewport ── */
+.toast { max-width: min(92vw, 560px); white-space: normal; text-align: center; }
+
+/* ── Family photo max-height ── */
+.fam-photo { max-height: min(48dvh, 420px); object-fit: contain; }
+.fam-photo-placeholder { max-height: min(42dvh, 360px); }
+
+
+/* ═══════════════════════════
+   ≤ 1400 px  (large desktop)
+   ═══════════════════════════ */
+@media (max-width: 1400px) {
+  .dir-content, .det-body, .admin-wrap { max-width: 1060px; }
+  .family-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+}
+
+/* ═══════════════════════════
+   ≤ 1100 px  (small laptop)
+   ═══════════════════════════ */
+@media (max-width: 1100px) {
+  .dir-content, .det-body, .admin-wrap { max-width: 860px; }
+  .family-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .info-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+}
+
+/* ═══════════════════════════
+   ≤ 900 px  (tablet landscape)
+   ═══════════════════════════ */
+@media (max-width: 900px) {
+  .dir-content, .det-body, .admin-wrap { max-width: 100%; padding-left: .85rem; padding-right: .85rem; }
+  .family-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .55rem; }
+  .hero-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 540px; gap: .55rem; }
+  .nav-card { min-height: 76px; }
+  .login-hero { height: 38%; min-height: 180px; }
+  .search-input { max-width: 600px; }
+}
+
+/* ═══════════════════════════
+   ≤ 760 px  (tablet portrait / large phone)
+   ═══════════════════════════ */
+@media (max-width: 760px) {
+  /* topbars */
+  .topbar { align-items: flex-start; gap: .45rem; flex-wrap: wrap; }
+  .topbar-right { gap: .28rem; flex-wrap: wrap; }
+  .dir-topbar, .det-hdr { flex-wrap: wrap; }
+  .det-nav { width: 100%; justify-content: flex-end; }
+
+  /* search / filters */
+  .search-wrap { padding: .42rem .7rem; }
+  .alpha-bar, .pg-filter { max-height: 24dvh; overflow-y: auto; }
+
+  /* content */
+  .dir-content { padding: .65rem; }
+  .det-body { padding: .75rem .65rem calc(1.75rem + var(--safe-bottom)); }
+  .admin-wrap { padding: .75rem .75rem 2rem; }
+
+  /* info cards */
+  .info-cards { grid-template-columns: 1fr 1fr; gap: .38rem; }
+  .info-card { padding: .52rem .62rem; }
+
+  /* family grid */
+  .family-grid { gap: .55rem; }
+  .family-card { padding: .75rem .82rem; }
+
+  /* forms */
+  .add-user-form, .photo-api-form { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════
+   ≤ 640 px  (phone landscape / small tablet)
+   ═══════════════════════════ */
+@media (max-width: 640px) {
+  /* hero nav: 2 columns */
+  .hero-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 420px; gap: .52rem; }
+  .nav-card { min-height: 74px; flex-direction: row; justify-content: flex-start; text-align: left; padding: .6rem .68rem; gap: .56rem; }
+  .nav-icon { width: 1.95rem; height: 1.95rem; margin-bottom: 0; font-size: 1rem; flex-shrink: 0; }
+  .nav-label { text-align: left; font-size: .74rem; }
+
+  /* family grid: 1 col */
+  .family-grid { grid-template-columns: 1fr; }
+
+  /* vicar grid */
+  .vicar-grid { grid-template-columns: 1fr; }
+  .vicar-card { padding: .9rem; }
+  .vicar-name { font-size: 1.2rem; }
+
+  /* login hero smaller */
+  .login-hero { height: 32%; min-height: 140px; }
+  .login-card, .setup-card { padding: 1.15rem; width: min(100%, 420px); }
+  .step-box { max-height: 34dvh; overflow: auto; }
+
+  /* modals */
+  .form-grid { grid-template-columns: 1fr; }
+  .modal-actions { align-items: stretch; gap: .55rem; }
+  .modal-right { justify-content: flex-end; flex-wrap: wrap; }
+  .btn-delete, .btn-cancel, .btn-save { min-height: 2.25rem; }
+
+  /* member table: card-style on mobile */
+  .info-cards { grid-template-columns: 1fr; }
+  .mtable { display: block; width: 100%; border: 0; background: transparent; box-shadow: none; overflow: visible; }
+  .mtable thead { display: none; }
+  .mtable tbody { display: grid; gap: .62rem; }
+  .mtable tbody tr { display: block; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-sm); padding: .58rem .68rem; }
+  .mtable tbody tr:nth-child(even) { background: #fff; }
+  .mtable td { display: grid !important; grid-template-columns: minmax(5.5rem, 36%) 1fr; gap: .5rem; align-items: center; border: 0; padding: .28rem 0; min-height: 1.75rem; }
+  .mtable td::before { font-size: .6rem; text-transform: uppercase; letter-spacing: .08rem; color: var(--muted); font-family: "Cormorant Garamond", serif; font-weight: 700; }
+  .mtable td:nth-child(1)::before { content: "Photo"; }
+  .mtable td:nth-child(2)::before { content: "Name"; }
+  .mtable td:nth-child(3)::before { content: "Relation"; }
+  .mtable td:nth-child(4)::before { content: "Date of Birth"; }
+  .mtable td:nth-child(5)::before { content: "Date of Marriage"; }
+  .mtable td:nth-child(6)::before { content: "Blood"; }
+  .mtable td:nth-child(7)::before { content: "Contact"; }
+  .mtable td:nth-child(8)::before { content: "Actions"; }
+  .mtable td:nth-child(4), .mtable td:nth-child(5), .mtable td:nth-child(6) { display: grid !important; }
+  .row-actions { justify-content: flex-start; }
+  .added-row { align-items: flex-start; }
+  .added-row-meta { white-space: normal; overflow-wrap: break-word; word-break: normal; }
+
+  /* modal sizes */
+  .modal-box, .otp-card { border-radius: 16px; }
+}
+
+/* ═══════════════════════════
+   ≤ 560 px  (typical phone portrait)
+   ═══════════════════════════ */
+@media (max-width: 560px) {
+  /* topbar */
+  .topbar { padding: .54rem .65rem; }
+  .topbar-logo { font-size: .8rem; flex-basis: 100%; }
+  .topbar-logo small { font-size: .64rem; }
+  .topbar-right { width: 100%; justify-content: flex-start; }
+  .topbar-user { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .topbar-btn { font-size: .69rem; padding: .24rem .48rem; }
+
+  /* hero: scrollable on small screens */
+  .hero { overflow-y: auto; justify-content: flex-start; padding-bottom: calc(.75rem + var(--safe-bottom)); }
+  .hero-content { padding: .25rem .75rem 1rem; }
+  .hero-cross { display: none; }
+  .hero-title-banner { margin-bottom: .55rem; padding: .56rem .68rem .6rem; border-radius: 13px; }
+  .hero-title { line-height: 1.05; }
+  .hero-year { margin: .12rem 0 0; }
+  .stats-strip { margin-bottom: .55rem; }
+  .stat-chip { padding: .1rem .58rem; }
+  .stat-num { font-size: 1.05rem; }
+
+  /* birthday strips */
+  .birthday-strip, .anniv-strip { width: calc(100% - 1rem); margin-bottom: .65rem; }
+
+  /* hero nav: single column */
+  .hero-nav { grid-template-columns: 1fr; max-width: 340px; gap: .42rem; }
+  .nav-card { min-height: 0; flex-direction: row; justify-content: flex-start; padding: .55rem .7rem; }
+  .nav-icon { font-size: 1.05rem; }
+  .nav-label { text-align: left; font-size: .76rem; }
+
+  /* login */
+  .login-hero { height: 32%; min-height: 140px; }
+
+  /* home footer */
+  .home-footer-banner { margin-top: .7rem; border-radius: 14px; font-size: .66rem; padding: .5rem .65rem; }
+}
+
+/* ═══════════════════════════
+   ≤ 420 px  (small phone)
+   ═══════════════════════════ */
+@media (max-width: 420px) {
+  .hero-nav { grid-template-columns: 1fr; max-width: 330px; gap: .4rem; }
+  .nav-card { min-height: 56px; padding: .5rem .62rem; border-radius: 14px; }
+  .topbar-right { gap: .2rem; }
+  .topbar-btn { font-size: .68rem; padding: .2rem .42rem; }
+  .add-user-form { grid-template-columns: 1fr; }
+  /* vicar form */
+  .vicar-child-row { grid-template-columns: 1fr; }
+  .vicar-child-phone, .vicar-child-remove { grid-column: auto; }
+  .vicar-child-remove { justify-self: end; }
+  /* crop controls */
+  .photo-crop-control { grid-template-columns: 1fr; gap: .2rem; }
+}
+
+/* ═══════════════════════════
+   Short screens (landscape phone / small browser)
+   ═══════════════════════════ */
+@media (max-height: 700px) {
+  .topbar, .dir-topbar, .det-hdr { padding-top: .45rem; padding-bottom: .45rem; }
+  .hero-content { padding-bottom: 1rem; }
+  .birthday-strip, .anniv-strip { padding: .48rem .62rem; margin-bottom: .55rem; }
+  .bday-strip-icon, .anniv-strip-icon { width: 1.65rem; height: 1.65rem; font-size: .95rem; }
+  .nav-card { min-height: 60px; padding: .48rem .5rem; }
+  .login-hero { min-height: 130px; }
+  .modal-box, .otp-card { padding: 1rem; }
+}
+
+@media (max-height: 560px) {
+  .nav-card { min-height: 54px; padding: .4rem .54rem; }
+  .nav-icon { width: 1.8rem; height: 1.8rem; font-size: .92rem; }
+  .nav-label { font-size: .67rem; }
+}
+
+@media (max-height: 540px) {
+  .hero { overflow-y: auto; justify-content: flex-start; }
+  .stats-strip { display: none; }
+  .hero-title { font-size: 1.45rem; }
+  .hero-sub { font-size: .82rem; }
+  .hero-title-banner { padding: .45rem .58rem; margin-bottom: .45rem; }
+  .hero-year { font-size: .65rem; margin: 0; }
+  .birthday-strip, .anniv-strip { margin-bottom: .45rem; }
+  .login-hero { display: none; }
+  .setup-card, .login-card { margin: auto 0; }
+  .home-footer-banner { font-size: .62rem; margin-top: .45rem; padding: .38rem .55rem; }
+}
+
+/* ═══════════════════════════
+   Wide/ultrawide (≥ 1600 px)
+   ═══════════════════════════ */
+@media (min-width: 1600px) {
+  .dir-content, .det-body, .admin-wrap { max-width: 1280px; }
+  .family-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .hero-nav { max-width: 760px; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; }
+  .nav-card { min-height: 96px; }
+  .search-input { max-width: 760px; }
+  .info-cards { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .birthday-strip, .anniv-strip { max-width: 720px; }
+  .stats-strip { max-width: 680px; }
+}
 </style>
 </head>
 <body>
